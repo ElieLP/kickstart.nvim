@@ -182,9 +182,9 @@ vim.keymap.set('n', '<leader>q', vim.diagnostic.setloclist, { desc = 'Open diagn
 --
 -- NOTE: This won't work in all terminal emulators/tmux/etc. Try your own mapping
 -- or just use <C-\><C-n> to exit terminal mode
-vim.keymap.set('t', '<Esc><Esc>', '<C-\\><C-n>', { desc = 'Exit terminal mode' })
+-- vim.keymap.set('t', '<Esc><Esc>', '<C-\\><C-n>', { desc = 'Exit terminal mode' })
 -- Exit normal mode using jj
-vim.keymap.set('i', 'jj', '<Esc>', { desc = 'Exit normal mode' })
+-- vim.keymap.set('i', 'jj', '<Esc>', { desc = 'Exit normal mode' })
 -- Center when using Ctrl+d Ctrl+u
 vim.keymap.set('n', '<C-d>', '<C-d>zz')
 vim.keymap.set('n', '<C-u>', '<C-u>zz')
@@ -284,6 +284,96 @@ require('lazy').setup({
   { 'numToStr/Comment.nvim', opts = {} },
 
   {
+    'zbirenbaum/copilot.lua',
+    -- keys = {
+    --   {
+    --     '<leader>tc',
+    --     function()
+    --       require('copilot.suggestion').toggle_auto_trigger()
+    --     end,
+    --     desc = 'Toggle (Copilot)',
+    --   },
+    -- },
+    config = function()
+      require('copilot').setup {
+        suggestion = {
+          enabled = true,
+          auto_trigger = true,
+          keymap = {
+            accept = '<M-l>',
+            accept_word = false,
+            accept_line = false,
+            next = '<M-]>',
+            prev = '<M-[>',
+            dismiss = '<C-]>',
+          },
+        },
+      }
+    end,
+  },
+
+  {
+    'zbirenbaum/copilot-cmp',
+    config = function()
+      require('copilot_cmp').setup()
+    end,
+  },
+
+  {
+    'yetone/avante.nvim',
+    config = function()
+      require('avante').setup {
+        provider = 'openai',
+        auto_suggestions_provider = 'copilot',
+      }
+    end,
+
+    event = 'VeryLazy',
+    lazy = false,
+    version = false, -- set this if you want to always pull the latest change
+    opts = {
+      -- add any opts here
+    },
+    -- if you want to build from source then do `make BUILD_FROM_SOURCE=true`
+    build = 'make',
+    -- build = "powershell -ExecutionPolicy Bypass -File Build.ps1 -BuildFromSource false" -- for windows
+    dependencies = {
+      'nvim-treesitter/nvim-treesitter',
+      'stevearc/dressing.nvim',
+      'nvim-lua/plenary.nvim',
+      'MunifTanjim/nui.nvim',
+      --- The below dependencies are optional,
+      'nvim-tree/nvim-web-devicons', -- or echasnovski/mini.icons
+      'zbirenbaum/copilot.lua', -- for providers='copilot'
+      {
+        -- support for image pasting
+        'HakonHarnes/img-clip.nvim',
+        event = 'VeryLazy',
+        opts = {
+          -- recommended settings
+          default = {
+            embed_image_as_base64 = false,
+            prompt_for_file_name = false,
+            drag_and_drop = {
+              insert_mode = true,
+            },
+            -- required for Windows users
+            use_absolute_path = true,
+          },
+        },
+      },
+      {
+        -- Make sure to set this up properly if you have lazy=true
+        'MeanderingProgrammer/render-markdown.nvim',
+        opts = {
+          file_types = { 'markdown', 'Avante' },
+        },
+        ft = { 'markdown', 'Avante' },
+      },
+    },
+  },
+
+  {
     'jiaoshijie/undotree',
     dependencies = 'nvim-lua/plenary.nvim',
     config = true,
@@ -294,41 +384,68 @@ require('lazy').setup({
 
   {
     'rmagatti/auto-session',
-    lazy = false,
+    config = function()
+      require('auto-session').setup {
+        auto_save = true,
+        auto_restore = true,
+        session_lens = {
+          -- If load_on_setup is false, make sure you use `:SessionSearch` to open the picker as it will initialize everything first
+          load_on_setup = true,
+          previewer = false,
+          mappings = {
+            -- Mode can be a string or a table, e.g. {"i", "n"} for both insert and normal mode
+            delete_session = { 'i', '<C-D>' },
+            alternate_session = { 'i', '<C-S>' },
+            copy_session = { 'i', '<C-Y>' },
+          },
+          -- Can also set some Telescope picker options
+          -- For all options, see: https://github.com/nvim-telescope/telescope.nvim/blob/master/doc/telescope.txt#L112
+          theme_conf = {
+            border = true,
+            -- layout_config = {
+            --   width = 0.8, -- Can set width and height as percent of window
+            --   height = 0.5,
+            -- },
+          },
+        },
+      }
+    end,
     keys = {
       -- Will use Telescope if installed or a vim.ui.select picker otherwise
       { '<leader>wf', '<cmd>SessionSearch<CR>', desc = 'Session find' },
       { '<leader>ws', '<cmd>SessionSave<CR>', desc = 'Save session' },
-      { '<leader>wa', '<cmd>SessionToggleAutoSave<CR>', desc = 'Toggle autosave' },
+      { '<leader>ta', '<cmd>SessionToggleAutoSave<CR>', desc = 'Toggle autosave' },
     },
-
-    ---enables autocomplete for opts
-    ---@module "auto-session"
-    ---@type AutoSession.Config
-    opts = {
-      -- ⚠️ This will only work if Telescope.nvim is installed
-      -- The following are already the default values, no need to provide them if these are already the settings you want.
-      session_lens = {
-        -- If load_on_setup is false, make sure you use `:SessionSearch` to open the picker as it will initialize everything first
-        load_on_setup = true,
-        previewer = false,
-        mappings = {
-          -- Mode can be a string or a table, e.g. {"i", "n"} for both insert and normal mode
-          delete_session = { 'i', '<C-D>' },
-          alternate_session = { 'i', '<C-S>' },
-          copy_session = { 'i', '<C-Y>' },
-        },
-        -- Can also set some Telescope picker options
-        -- For all options, see: https://github.com/nvim-telescope/telescope.nvim/blob/master/doc/telescope.txt#L112
-        theme_conf = {
-          border = true,
-          -- layout_config = {
-          --   width = 0.8, -- Can set width and height as percent of window
-          --   height = 0.5,
-          -- },
-        },
-      },
-    },
+    --
+    -- ---enables autocomplete for opts
+    -- ---@module "auto-session"
+    -- ---@type AutoSession.Config
+    -- opts = {
+    --   -- ⚠️ This will only work if Telescope.nvim is installed
+    --   -- The following are already the default values, no need to provide them if these are already the settings you want.
+    --   auto_save = true, -- Enables/disables auto saving session on exit
+    --   auto_restore = true,
+    --   session_lens = {
+    --     -- If load_on_setup is false, make sure you use `:SessionSearch` to open the picker as it will initialize everything first
+    --     load_on_setup = true,
+    --     previewer = false,
+    --     mappings = {
+    --       -- Mode can be a string or a table, e.g. {"i", "n"} for both insert and normal mode
+    --       delete_session = { 'i', '<C-D>' },
+    --       alternate_session = { 'i', '<C-S>' },
+    --       copy_session = { 'i', '<C-Y>' },
+    --     },
+    --     -- Can also set some Telescope picker options
+    --     -- For all options, see: https://github.com/nvim-telescope/telescope.nvim/blob/master/doc/telescope.txt#L112
+    --     theme_conf = {
+    --       border = true,
+    --       -- layout_config = {
+    --       --   width = 0.8, -- Can set width and height as percent of window
+    --       --   height = 0.5,
+    --       -- },
+    --     },
+    --   },
+    -- },
   },
 
   -- {
